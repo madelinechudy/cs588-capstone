@@ -60,8 +60,8 @@ def preprocess_data(images, labels):
 
 
 if __name__ == "__main__":
-    train_data_dir = '../data/Training' # Change for the directory needed
-    test_data_dir = '../data/Testing' # Change for the directory needed
+    train_data_dir = '../Data/Training' # Change for the directory needed
+    test_data_dir = '../Data/Testing' # Change for the directory needed
 
     train_images, train_labels = load_data(train_data_dir)
     test_images, test_labels = load_data(test_data_dir)
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     test_images, test_labels = preprocess_data(test_images, test_labels)
 
     # Saving of processed data
-    if not os.path.exists('../data/processed'):
-        os.makedirs('../data/processed')
+    if not os.path.exists('../Data/processed'):
+        os.makedirs('../Data/processed')
 
-    np.save('../data/processed/train_images.npy', train_images)
-    np.save('../data/processed/train_labels.npy', train_labels)
-    np.save('../data/processed/test_images.npy', test_images)
-    np.save('../data/processed/test_labels.npy', test_labels)
+    np.save('../Data/processed/train_images.npy', train_images)
+    np.save('../Data/processed/train_labels.npy', train_labels)
+    np.save('../Data/processed/test_images.npy', test_images)
+    np.save('../Data/processed/test_labels.npy', test_labels)
