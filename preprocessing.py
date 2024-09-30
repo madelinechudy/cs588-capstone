@@ -20,7 +20,7 @@ def load_data(data_dir):
     images = []
 
     # Define label mapping
-    label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dimentia': 2, 'moderate_dimentia': 3}
+    label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dementia': 2, 'moderate_dementia': 3}
 
     # Iterate over each label
     for label, value in label_map.items():
