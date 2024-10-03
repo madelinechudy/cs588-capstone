@@ -60,8 +60,8 @@ def preprocess_data(images, labels):
 
 
 if __name__ == "__main__":
-    train_data_dir = '../Data/Training' # Change for the directory needed
-    test_data_dir = '../Data/Testing' # Change for the directory needed
+    train_data_dir = '../Data/Training' 
+    test_data_dir = '../Data/Testing' 
 
     train_images, train_labels = load_data(train_data_dir)
     test_images, test_labels = load_data(test_data_dir)
