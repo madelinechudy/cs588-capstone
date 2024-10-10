@@ -50,4 +50,5 @@ resnet_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', m
 
 #Print the summary
 resnet_model.summary()
+ 
 

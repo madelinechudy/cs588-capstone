@@ -21,3 +21,10 @@ for images, labels in train_dataset.take(1):
 
 #Use the dataset for training
 resnet_model.fit(train_dataset, epochs=10)
+
+#Check if the directory exists and create it if not
+if not os.path.exists('../cs588-capstone/Segmentation/Models'):
+    os.makedirs('../cs588-capstone/Segmentation/Models')
+
+#Save model
+resnet_model.save('../cs588-capstone/Segmentation/Models/pretrained_resnet_model.keras')
