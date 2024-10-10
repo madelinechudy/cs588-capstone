@@ -60,6 +60,8 @@ def preprocess_data(images, labels):
 
 
 if __name__ == "__main__":
+    
+    # Using absolute path so root directory is read correctly
     train_data_dir = os.path.abspath('../cs588-capstone/Data/Training')
     test_data_dir = os.path.abspath('../cs588-capstone/Data/Testing')
 
