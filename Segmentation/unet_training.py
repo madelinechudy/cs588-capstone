@@ -2,22 +2,21 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from build_unet import build_unet
 import matplotlib.pyplot as plt
 
 # Load preprocessed data
 train_images = np.load('../cs588-capstone/Data/Processed/train_images.npy')
-train_masks = np.load('../cs588-capstone/Data/Processed/train_masks.npy')  
+train_masks = np.load('C:/Users/matt/Desktop/train_masks')  
 
 # Divide into training set and validation set
-X_train, X_val, y_train, y_val = train_test_split(train_images, train_masks, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(train_images, train_masks, test_size=0.2, random_state=42)
 
 # Load pretrained model from build_unet
 input_shape = (224, 224, 3)
 unet_model = tf.keras.models.load_model('../cs588-capstone/Segmentation/Models/pretrained_unet_model.keras')
 
 # Train the model and save the history
-history = unet_model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=10, batch_size=32)
+history = unet_model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=10, batch_size=32)
 
 # Save the trained model
 unet_model.save('../cs588-capstone/Segmentation/Models/unet_model.keras')
