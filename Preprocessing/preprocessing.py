@@ -62,8 +62,8 @@ def preprocess_data(images, labels):
 if __name__ == "__main__":
     
     # Using absolute path so root directory is read correctly
-    train_data_dir = os.path.abspath('../cs588-capstone/Data/Training')
-    test_data_dir = os.path.abspath('../cs588-capstone/Data/Testing')
+    train_data_dir = os.path.abspath('../Data/Training')
+    test_data_dir = os.path.abspath('../Data/Testing')
 
     train_images, train_labels = load_data(train_data_dir)
     test_images, test_labels = load_data(test_data_dir)
@@ -72,10 +72,10 @@ if __name__ == "__main__":
     test_images, test_labels = preprocess_data(test_images, test_labels)
 
     # Saving of processed data
-    if not os.path.exists('../cs588-capstone/Data/Processed'):
-        os.makedirs('../cs588-capstone/Data/Processed')
+    if not os.path.exists('../Data/Processed'):
+        os.makedirs('../Data/Processed')
 
-    np.save('../cs588-capstone/Data/Processed/train_images.npy', train_images)
-    np.save('../cs588-capstone/Data/Processed/train_labels.npy', train_labels)
-    np.save('../cs588-capstone/Data/Processed/test_images.npy', test_images)
-    np.save('../cs588-capstone/Data/Processed/test_labels.npy', test_labels)
+    np.save('../Data/Processed/train_images.npy', train_images)
+    np.save('../Data/Processed/train_labels.npy', train_labels)
+    np.save('../Data/Processed/test_images.npy', test_images)
+    np.save('../Data/Processed/test_labels.npy', test_labels)
