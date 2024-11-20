@@ -1,33 +1,83 @@
-import numpy as np
 import tensorflow as tf
-from build_resnet import build_resnet
 import os
+import cv2
+import numpy as np
 import matplotlib.pyplot as plt
+from build_resnet import build_resnet
 
-# Load preprocessed images and labels
-X_train = np.load('../cs588-capstone/Data/Processed/train_images.npy') # Shape should be (num_samples, height, width, channels)
-y_train = np.load('../cs588-capstone/Data/Processed/train_labels.npy') # Shape should be (num_samples,)
+data_dir = '../cs588-capstone/Data/Training'  
+batch_size = 64
+input_shape = (224, 224, 3) 
 
-# Convert the labels to a TensorFlow tensor
-y_train = tf.convert_to_tensor(y_train, dtype=tf.int32)
+# Multi Classification 
+label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dementia': 2, 'moderate_dementia': 3}
 
-# Create a TensorFlow dataset for training
-train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
+def data_generator(data_dir, batch_size, input_shape):
+    """
+    Yields batches of images and labels from directories dynamically for training.
+    
+    Parameters:
+        data_dir (string): Directory to the dataset images.
+        batch_size (int): Size of batches.
+        input_shape (array): Shape of the images by pixel count and channels. 
 
-# Shuffle and batch the dataset
-train_dataset = train_dataset.shuffle(buffer_size=1024).batch(64)
+    Yields:
+        tuple, containing:
+            batch_images (np.array): The normalized image data as a numpy array, given from a batch.
+            batch_labels (np.array): A numpy array of labels corresponding to each image, given from a batch.
 
-# Print out the shape of the dataset
-for images, labels in train_dataset.take(1):
-    print("Images shape:", images.shape)
-    print("Labels shape:", labels.shape)
+    """
+    image_files = []
+    labels = []
 
-input_shape = (224, 224, 3)  
+    # Collect file paths and their respective labels
+    for label, label_value in label_map.items():
+        label_dir = os.path.join(data_dir, label)
+        for file_name in os.listdir(label_dir):
+            file_path = os.path.join(label_dir, file_name)
+            image_files.append(file_path)
+            labels.append(label_value)
+    
+    # Shuffle data indices
+    indices = np.arange(len(image_files))
+    np.random.shuffle(indices)
+
+    # Preprocessing
+    while True:
+        for start_idx in range(0, len(image_files), batch_size):
+            batch_indices = indices[start_idx:start_idx + batch_size]
+            batch_images = []
+            batch_labels = []
+            
+            for idx in batch_indices:
+                img = cv2.imread(image_files[idx])
+                if img is not None:
+                    # Resize and normalize image
+                    img = cv2.resize(img, (input_shape[1], input_shape[0]))
+                    img = img / 255.0  # Normalize to [0, 1] range (not truly binary --> look to making binary)
+                    batch_images.append(img)
+                    batch_labels.append(labels[idx])
+            
+            yield np.array(batch_images), np.array(batch_labels)
+
+# Create dataset off tf.data API to streamline batches
+train_dataset = tf.data.Dataset.from_generator(
+    lambda: data_generator(data_dir, batch_size, input_shape),
+    output_signature=(
+        tf.TensorSpec(shape=(None, *input_shape), dtype=tf.float32),
+        tf.TensorSpec(shape=(None,), dtype=tf.int32)
+    )
+)
+
+# Shuffle the dataset created from tf.data.Dataset
+train_dataset = train_dataset.shuffle(buffer_size=1024).prefetch(tf.data.experimental.AUTOTUNE)
+
+# Build and compile the model
 resnet_model = build_resnet(input_shape, num_classes=4)
 resnet_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-# Use the dataset for training
-history = resnet_model.fit(train_dataset, epochs=10, batch_size=32)
+# Train the model
+history = resnet_model.fit(train_dataset, epochs=10, steps_per_epoch=1086)
 
 # Check if the directory exists and create it if not
 if not os.path.exists('../cs588-capstone/Segmentation/Models'):
@@ -50,7 +100,7 @@ if not os.path.exists('Models/ResNet'):
 # Plot and save accuracy images
 plt.figure()
 plt.plot(history.history['accuracy'], label='Train Accuracy')
-#plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
@@ -60,7 +110,7 @@ plt.close()
 # Draw and save loss images
 plt.figure()
 plt.plot(history.history['loss'], label='Train Loss')
-#plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
