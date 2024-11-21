@@ -35,10 +35,10 @@ def predict(model, image_tensor):
 
     #If it's segmentation, return the predicted class map
     if len(predicted_class.shape) == 2:
-        return predicted_class  # Return the whole class map
+        return predicted_class  #Return the whole class map
 
     #Otherwise, it's a single class classification
-    return classes[predicted_class.item()]  # Convert to human-readable class label
+    return classes[predicted_class.item()]  #Convert to human-readable class label
 
 #Load images and corresponding masks
 def load_images_and_masks(image_dir, masks_dir):
