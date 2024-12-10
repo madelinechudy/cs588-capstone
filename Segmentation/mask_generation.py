@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 image_dir = '../cs588-capstone/Data/Training'
 output_dir = '../cs588-capstone/Data/Processed/Masks'
 batch_size = 64
-target_size = (224, 224)
+target_size = (496, 248)  # Updated target size to 496x248
 
 label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dementia': 2, 'moderate_dementia': 3}
 
@@ -16,7 +16,7 @@ def preprocess_image(file_path, label, original_filename):
     """Loads and preprocesses an image."""
     image = tf.io.read_file(file_path)
     image = tf.image.decode_jpeg(image, channels=3)
-    image = tf.image.resize(image, target_size)
+    image = tf.image.resize(image, target_size)  # Resize to 496x248
     image = image / 255.0  # Normalize to [0, 1] range (not truly binary)
     return image, label, original_filename
 
@@ -59,6 +59,9 @@ def generate_and_save_masks(dataset, output_dir=output_dir):
         # Enhance details using morphological operations
         kernel = np.ones((3, 3), np.uint8)
         batch_masks = [cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel) for mask in batch_masks]
+
+        # Resize masks to match target size (496x248)
+        batch_masks = [cv2.resize(mask, target_size[::-1]) for mask in batch_masks]
 
         # Save each mask in the batch
         for i in range(batch_images.shape[0]):
