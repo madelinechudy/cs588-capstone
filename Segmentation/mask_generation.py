@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 image_dir = '../cs588-capstone/Data/Training'
 output_dir = '../cs588-capstone/Data/Processed/Masks'
 batch_size = 64
-target_size = (496, 248)  # Updated target size to 496x248
+target_size = (248, 496)  # Correct dimensions: (height, width)
 
 label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dementia': 2, 'moderate_dementia': 3}
 
@@ -16,8 +16,8 @@ def preprocess_image(file_path, label, original_filename):
     """Loads and preprocesses an image."""
     image = tf.io.read_file(file_path)
     image = tf.image.decode_jpeg(image, channels=3)
-    image = tf.image.resize(image, target_size)  # Resize to 496x248
-    image = image / 255.0  # Normalize to [0, 1] range (not truly binary)
+    image = tf.image.resize(image, (target_size[0], target_size[1]))  # Resize to 496x248
+    image = image / 255.0  # Normalize to [0, 1] range
     return image, label, original_filename
 
 def load_data(image_dir):
@@ -61,7 +61,7 @@ def generate_and_save_masks(dataset, output_dir=output_dir):
         batch_masks = [cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel) for mask in batch_masks]
 
         # Resize masks to match target size (496x248)
-        batch_masks = [cv2.resize(mask, target_size[::-1]) for mask in batch_masks]
+        batch_masks = [cv2.resize(mask, (target_size[1], target_size[0])) for mask in batch_masks]  # Width, Height order
 
         # Save each mask in the batch
         for i in range(batch_images.shape[0]):
@@ -74,3 +74,4 @@ def generate_and_save_masks(dataset, output_dir=output_dir):
             cv2.imwrite(os.path.join(output_dir, file_name), mask)
 
 generate_and_save_masks(dataset)
+

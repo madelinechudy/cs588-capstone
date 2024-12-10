@@ -48,7 +48,7 @@ def build_resnet_localization(input_shape, output_channels):
     return model
 
 # Example usage for localization
-input_shape = (256, 256, 1)  # Input shape for MRI images (e.g., grayscale)
+input_shape = (248, 496, 1)  # Updated input shape for MRI images (height=248, width=496, grayscale)
 output_channels = 1  # Number of output channels (binary mask)
 
 resnet_localization_model = build_resnet_localization(input_shape, output_channels)
@@ -56,3 +56,4 @@ resnet_localization_model.compile(optimizer='adam', loss='binary_crossentropy', 
 
 # Print the summary
 resnet_localization_model.summary()
+

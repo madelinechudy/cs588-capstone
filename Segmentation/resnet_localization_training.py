@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from build_resnet import build_resnet_localization  # Import the updated ResNet localization function
+from build_resnet_localization import build_resnet_localization
 from skimage.morphology import remove_small_objects
 
 # Directory paths and parameters
@@ -12,7 +12,7 @@ data_dir = '../cs588-capstone/Data/Training'
 mask_dir = '../cs588-capstone/Data/Processed/Masks'
 output_dir = '../cs588-capstone/Segmentation/Models/ResNet'
 batch_size = 32
-input_shape = (496, 248, 1)  # Adjusted for actual image dimensions and grayscale
+input_shape = (248, 496, 1)  # Corrected input shape (height=248, width=496, grayscale)
 epochs = 10
 
 label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dementia': 2, 'moderate_dementia': 3}
@@ -39,10 +39,10 @@ def data_generator(image_files, mask_files, batch_size, input_shape, augment=Fal
                 img = cv2.imread(image_files[idx], cv2.IMREAD_GRAYSCALE)  # Load grayscale image
                 mask = cv2.imread(mask_files[idx], cv2.IMREAD_GRAYSCALE)
                 if img is not None and mask is not None:
-                    img = cv2.resize(img, (input_shape[1], input_shape[0]))  # Resize to (248, 496)
+                    img = cv2.resize(img, (input_shape[1], input_shape[0]))  # Resize to (496, 248)
                     img = img / 255.0
 
-                    mask = cv2.resize(mask, (input_shape[1], input_shape[0]))  # Resize to (248, 496)
+                    mask = cv2.resize(mask, (input_shape[1], input_shape[0]))  # Resize to (496, 248)
                     mask = np.where(mask > 127, 1, 0)
                     mask = remove_small_objects(mask > 0.5, min_size=50).astype(np.uint8)
 
