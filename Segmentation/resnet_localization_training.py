@@ -12,13 +12,26 @@ data_dir = '../cs588-capstone/Data/Training'
 mask_dir = '../cs588-capstone/Data/Processed/Masks'
 output_dir = '../cs588-capstone/Segmentation/Models/ResNet'
 batch_size = 32
-input_shape = (248, 496, 1)  # Corrected input shape (height=248, width=496, grayscale)
+input_shape = (248, 496, 1) 
 epochs = 10
 
 label_map = {'no_dementia': 0, 'very_mild_dementia': 1, 'mild_dementia': 2, 'moderate_dementia': 3}
 
 # Combined Dice and Binary Cross-Entropy Loss
 def combined_loss(y_true, y_pred):
+    """
+    Computes a combined loss for binary segmentation tasks, consisting of:
+      Binary Cross-Entropy loss.
+      Dice loss (a measure of overlap between predicted and true masks).
+
+    Parameters:
+        y_true (tf.Tensor): Ground truth binary masks. Shape: (batch_size, height, width, 1).
+        y_pred (tf.Tensor): Predicted masks, with values in the range [0, 1].
+                            Shape: (batch_size, height, width, 1).
+
+    Returns:
+        tf.Tensor: The combined loss value for the batch. This is the sum of BCE and Dice loss.
+    """
     bce = tf.keras.losses.BinaryCrossentropy()(y_true, y_pred)
     numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=[1, 2])
     denominator = tf.reduce_sum(y_true + y_pred, axis=[1, 2])
@@ -27,6 +40,24 @@ def combined_loss(y_true, y_pred):
 
 # Data generator with augmentation and postprocessing
 def data_generator(image_files, mask_files, batch_size, input_shape, augment=False):
+    """
+    A generator that yields batches of images and corresponding masks for training or validation.
+
+    Parameters:
+        image_files (list of str): List of file paths to the input images.
+        mask_files (list of str): List of file paths to the corresponding masks.
+        batch_size (int): The number of samples per batch.
+        input_shape (tuple of int): The desired shape of the images and masks as (height, width).
+        augment (bool, optional): If True, applies random data augmentation such as flipping. 
+                                  Defaults to False.
+
+    Yields:
+        tuple:
+            batch_images (numpy.ndarray): Batch of preprocessed images with shape 
+              (batch_size, height, width, 1), normalized to the range [0, 1].
+            batch_masks (numpy.ndarray): Batch of preprocessed binary masks with shape 
+              (batch_size, height, width, 1).
+    """
     while True:
         indices = np.arange(len(image_files))
         np.random.shuffle(indices)
@@ -99,9 +130,9 @@ history = resnet_model.fit(
 resnet_model.save(os.path.join(output_dir, 'resnet_model.keras'))
 np.save(os.path.join(output_dir, 'resnet_history.npy'), history.history)
 
-# Plot training history
+# Plot accuracy
 plt.figure()
-plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['accuracy'], label='Train Accuracy') 
 plt.plot(history.history['val_accuracy'], label='Val Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
@@ -109,6 +140,7 @@ plt.legend()
 plt.savefig(os.path.join(output_dir, 'resnet_accuracy.png'))
 plt.close()
 
+# Plot loss
 plt.figure()
 plt.plot(history.history['loss'], label='Train Loss')
 plt.plot(history.history['val_loss'], label='Val Loss')

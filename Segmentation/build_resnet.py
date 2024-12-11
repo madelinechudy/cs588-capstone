@@ -3,6 +3,16 @@ import tensorflow as tf
 
 # Define residual block
 def residual_block(x, filters):
+    """
+    Builds a residual block with two convolutional layers and a skip connection.
+
+    Parameters:
+        x (tf.Tensor): Input tensor to the residual block.
+        filters (int): The number of filters for the convolutional layers.
+
+    Returns:
+        tf.Tensor: Output tensor after applying the residual block.
+    """
     shortcut = x  # Save input for skip connection
     
     # First convolution layer
@@ -22,6 +32,16 @@ def residual_block(x, filters):
 
 # Build ResNet model
 def build_resnet(input_shape, num_classes):
+    """
+    Builds a ResNet model.
+
+    Parameters:
+        input_shape (tuple of int): The shape of the input images, e.g., `(224, 224, 3)` for RGB images.
+        num_classes (int): The number of output classes for classification.
+
+    Returns:
+        tf.keras.Model: A Keras Model representing the ResNet architecture.
+    """
     inputs = tf.keras.layers.Input(shape=input_shape)
 
     # Initial convolution layer
@@ -41,13 +61,14 @@ def build_resnet(input_shape, num_classes):
     return model
 
 # Example usage
-input_shape = (224, 224, 3)  # Example input shape (image size)
-num_classes = 4 # Number of classes for classification
+input_shape = (248, 496, 1)  # Updated input shape (grayscale image size)
+num_classes = 4  # Number of classes for classification
 
 resnet_model = build_resnet(input_shape, num_classes)
 resnet_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Print the summary
 resnet_model.summary()
+
  
 
