@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from build_resnet import build_resnet
 
-data_dir = '/content/cs588-capstone/Data/Training'
+data_dir = '../cs588-capstone/Data/Training'
 batch_size = 64
 input_shape = (248, 496, 1)  
 epochs = 10
