@@ -1,62 +1,60 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css'; 
+import React, { useState } from "react";
+import axios from "axios";
+import './App.css';
 
 function App() {
-  const [image, setImage] = useState(null);
-  const [predictions, setPredictions] = useState(null); //Store both predictions
-  const [errorMessage, setErrorMessage] = useState(''); //To display any errors
+  const [file, setFile] = useState(null);
+  const [prediction, setPrediction] = useState("");
+  const [error, setError] = useState("");
 
-  const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    setImage(file);
-    setPredictions(null); //Clear previous predictions
-    setErrorMessage(''); //Clear previous errors
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+    setPrediction("");
+    setError("");
   };
 
-  const handleSubmit = async () => {
-    if (!image) {
-      setErrorMessage('Please select an image before submitting.');
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!file) {
+      setError("Please upload an image file.");
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', image);
+    formData.append("file", file);
 
     try {
-      const response = await axios.post('http://localhost:5000/predict', formData, {
+      const response = await axios.post("http://127.0.0.1:5000/predict", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
-
-      //Handle predictions from both models
-      setPredictions({
-        unet: response.data.unet_prediction,
-        resnet: response.data.resnet_prediction,
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setErrorMessage('There was an error processing your request. Please try again.');
+      if (response.data.error) {
+        setError(response.data.error);
+      } else {
+        setPrediction(response.data.prediction);
+      }
+    } catch (err) {
+      // Check for network errors
+      if (err.response) {
+        setError(`Server Error: ${err.response.data.error || "Unknown error occurred."}`);
+      } else if (err.request) {
+        setError("Network Error: Unable to reach the server. Please check your connection.");
+      } else {
+        setError(`Error: ${err.message}`);
+      }
     }
   };
 
   return (
     <div className="App">
-      <h1>MRI Image Prediction</h1>
-
-      <input type="file" onChange={handleImageChange} />
-      <button onClick={handleSubmit}>Submit</button>
-
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-
-      {predictions && (
-        <div>
-          <h2>Predictions</h2>
-          <p><strong>U-Net Prediction:</strong> {predictions.unet}</p>
-          <p><strong>ResNet Prediction:</strong> {predictions.resnet}</p>
-        </div>
-      )}
+      <h1>Alzheimer's Prediction</h1>
+      <form onSubmit={handleSubmit}>
+        <input type="file" onChange={handleFileChange} accept="image/*" />
+        <button type="submit">Submit</button>
+      </form>
+      {error && <div style={{ color: "red" }}>Error: {error}</div>}
+      {prediction && <div style={{ color: "green" }}>Prediction: {prediction}</div>}
     </div>
   );
 }
