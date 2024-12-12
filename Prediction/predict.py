@@ -1,12 +1,13 @@
+# predict.py
 import tensorflow as tf
 import numpy as np
 import os
 import cv2
 
-#Define classes
+# Define classes
 classes = ['no_dementia', 'very_mild_dementia', 'mild_dementia', 'moderate_dementia']
 
-#Load pretrained model
+# Load pretrained model
 def load_model(model_path):
     """
     Parameters:
@@ -17,7 +18,7 @@ def load_model(model_path):
     """
     return tf.keras.models.load_model(model_path)
 
-#Perform prediction
+# Perform prediction
 def predict(model, image_tensor):
     """
     Perform prediction using model on a single image tensor.
@@ -29,98 +30,75 @@ def predict(model, image_tensor):
     Returns:
         str: Predicted class label.
     """
-    output = model(image_tensor)  #Get model output
-    print(f"Raw model output: {output.numpy()}")  #Print the raw output for debugging
+    output = model(image_tensor)  # Get model output
+    print(f"Raw model output: {output.numpy()}")  # Print the raw output for debugging
 
-    #Check if the output is softmax probabilities for multi-class classification
+    # Check if the output is softmax probabilities for multi-class classification
     if output.shape[-1] > 1:
         predicted_class = np.argmax(output.numpy(), axis=-1)
-    else:  #For binary classification (if needed)
+    else:  # For binary classification (if needed)
         predicted_class = (output.numpy() > 0.5).astype(int)
 
     return classes[predicted_class.item()]
 
-#Generator function to load images in batches (no masks needed for test set)
-def load_images_in_batches(image_dir, batch_size):
+# Preprocess image to match training pipeline
+def preprocess_image(image_path):
     """
-    Load images from directory in batches to save memory. This function
-    will recursively walk through subdirectories to find images.
+    Preprocess the input image for prediction.
 
     Parameters:
-        image_dir (str): Path to the directory containing test images.
-        batch_size (int): The batch size to load at once.
+        image_path (str): Path to the input image file.
 
-    Yields:
-        np.ndarray: A batch of images.
+    Returns:
+        np.ndarray: Preprocessed image tensor ready for prediction.
     """
-    images = []
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)  # Read as grayscale
+    if img is None:
+        raise ValueError(f"Failed to load image from path: {image_path}")
 
-    #Walk through all subdirectories in the image directory
-    for root, _, files in os.walk(image_dir):
-        for img_file in files:
-            img_path = os.path.join(root, img_file)
-            if os.path.isfile(img_path):
-                #Read and resize image, convert to grayscale
-                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  #Read as grayscale
-                if img is not None:
-                    img = cv2.resize(img, (496, 248))  #Resize to model input size (width, height)
-                    images.append(img)
+    img = cv2.resize(img, (496, 248))  # Resize to model input size
+    img = np.expand_dims(img, axis=-1)  # Add channel dimension
+    img = img.astype('float32') / 255.0  # Normalize to [0, 1]
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    return img
 
-            #Once the batch size is met, yield the batch
-            if len(images) == batch_size:
-                yield np.array(images)[..., np.newaxis]  #Add channel dimension (for grayscale)
-                images = []  #Reset list after yielding
-
-    #Yield any remaining images that didn't fill a complete batch
-    if len(images) > 0:
-        yield np.array(images)[..., np.newaxis]  #Add channel dimension (for grayscale)
-
-#Main function to run predictions (modified for test images only)
-def main(test_images_dir, resnet_model_path, batch_size):
+# Main function to run a single prediction
+def main(image_path, resnet_model_path):
     """
     Main function to load data, perform predictions, and display results.
 
     Parameters:
-        test_images_dir (str): Path to the test images directory.
+        image_path (str): Path to the input image file.
         resnet_model_path (str): Path to the pretrained ResNet model.
-        batch_size (int): The batch size for processing images.
     """
-    #Load model
+    # Load model
     resnet_model = load_model(resnet_model_path)
 
-    #Load test images in batches
-    for batch_idx, batch_images in enumerate(load_images_in_batches(test_images_dir, batch_size)):
-        print(f"Processing batch {batch_idx + 1} with {batch_images.shape[0]} images.")  #Debug print
-        
-        #Normalize test images to [0, 1] just like during training
-        batch_images = batch_images.astype('float32') / 255.0
+    # Preprocess the image
+    img_tensor = preprocess_image(image_path)
+    print(f"Image shape before prediction: {img_tensor.shape}")
 
-        #Perform predictions for each batch of images
-        for i, img in enumerate(batch_images):
-            img_tensor = np.expand_dims(img, axis=0)  #Add batch dimension (shape: (1, 248, 496, 1))
-            
-            #Check shape and values of the input tensor for debugging
-            print(f"Image shape before prediction: {img_tensor.shape}")
-            
-            prediction = predict(resnet_model, img_tensor)
-            print(f"Batch {batch_idx + 1}, Image {i + 1}: Predicted Class: {prediction}")
+    # Perform prediction
+    prediction = predict(resnet_model, img_tensor)
+    print(f"Predicted Class: {prediction}")
+
+    return prediction
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Predict dementia stages using ResNet model.')
-    parser.add_argument('--test_images_dir', type=str, required=True, help='Path to the directory containing test images.')
+    parser.add_argument('--image_path', type=str, required=True, help='Path to the input image file.')
     parser.add_argument('--resnet_model_path', type=str, required=True, help='Path to the pretrained ResNet model.')
-    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for processing images.')
     args = parser.parse_args()
 
-    #Ensure input directories/files exist
-    if not os.path.exists(args.test_images_dir):
-        print(f"Error: The directory '{args.test_images_dir}' does not exist.")
+    # Ensure input files exist
+    if not os.path.exists(args.image_path):
+        print(f"Error: The file '{args.image_path}' does not exist.")
         exit(1)
     if not os.path.exists(args.resnet_model_path):
         print(f"Error: The file '{args.resnet_model_path}' does not exist.")
         exit(1)
 
-    #Run prediction
-    main(args.test_images_dir, args.resnet_model_path, args.batch_size)
+    # Run prediction
+    main(args.image_path, args.resnet_model_path)

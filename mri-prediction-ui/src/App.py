@@ -1,60 +1,63 @@
-import os
-import argparse
 from flask import Flask, request, jsonify
-import numpy as np
-from PIL import Image
 import tensorflow as tf
-import io
+import numpy as np
+import os
+import cv2
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-def load_models(unet_model_path, resnet_model_path):
-    print(f"Loading U-Net model from: {unet_model_path}")
-    print(f"Loading ResNet model from: {resnet_model_path}")
-    unet_model = tf.keras.models.load_model(unet_model_path)
-    resnet_model = tf.keras.models.load_model(resnet_model_path)
-    return unet_model, resnet_model
+model = None
+
+@app.before_request
+def load_model():
+    global model
+    model_path = r"C:\Users\maddi\Documents\cs588-capstone\Segmentation\Models\ResNet\Classification\resnet_model.keras"
+    try:
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found at: {model_path}")
+        model = tf.keras.models.load_model(model_path)
+        print("Model loaded successfully.")
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        model = None
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+    global model
+    if model is None:
+        return jsonify({'error': 'Model not loaded. Please check the server logs for details.'}), 500
 
     try:
-        #Read the image
-        image = Image.open(io.BytesIO(file.read()))
-        image = image.resize((224, 224))  #Resize to match model input
-        image = np.array(image) / 255.0  #Normalize the image
-        image = np.expand_dims(image, axis=0)  #Add batch dimension
+        file = request.files['file']
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
 
-        #Get predictions from both models
-        unet_prediction = unet_model.predict(image)
-        resnet_prediction = resnet_model.predict(image)
+        # Save and preprocess the image
+        image_path = 'uploaded_image.png'
+        file.save(image_path)
+        img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            raise ValueError('Invalid image format or corrupted image.')
 
-        #Assuming your models output classification labels, modify accordingly
-        unet_predicted_class = np.argmax(unet_prediction, axis=-1)
-        resnet_predicted_class = np.argmax(resnet_prediction, axis=-1)
+        img = cv2.resize(img, (496, 248))  # Resize to match the model input
+        img = img.astype('float32') / 255.0  # Normalize to [0, 1]
+        img_tensor = np.expand_dims(img, axis=-1)  # Add channel dimension
+        img_tensor = np.expand_dims(img_tensor, axis=0)  # Add batch dimension
 
-        return jsonify({
-            'unet_prediction': int(unet_predicted_class[0]),
-            'resnet_prediction': int(resnet_predicted_class[0])
-        })
+        # Predict
+        predictions = model.predict(img_tensor)
+        predicted_class = np.argmax(predictions, axis=-1)[0]
+        class_names = ['no_dementia', 'very_mild_dementia', 'mild_dementia', 'moderate_dementia']
+        result = class_names[predicted_class]
+
+        # Return prediction result as JSON
+        return jsonify({'prediction': result})
 
     except Exception as e:
-        print(f"Error during prediction: {str(e)}")  #Log errors to console
-        return jsonify({'error': str(e)}), 500
+        print(f"Error during prediction: {e}")
+        return jsonify({'error': f"Prediction failed: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Run Flask app for MRI prediction.")
-    parser.add_argument('--unet_model_path', type=str, required=True, 
-                        help='Path to the U-Net model file.')
-    parser.add_argument('--resnet_model_path', type=str, required=True, 
-                        help='Path to the ResNet model file.')
-
-    args = parser.parse_args()
-    unet_model, resnet_model = load_models(args.unet_model_path, args.resnet_model_path)
     app.run(debug=True)
