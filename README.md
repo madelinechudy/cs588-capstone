@@ -1,13 +1,21 @@
 # cs588-capstone
 
+# Mask Generation
 
-# RESNET TRAINING
+Run mask_generation.py to begin creating masks for each MRI image. Make sure the folder directories match the 
+labels in 'label_map'. 
 
-Run py resnet_training.py to start training the model. The program will train with 10 epochs, 
+# ResNet Training
+
+Run resnet_training.py to start training the model on classification of varying degrees. The program will train with 10 epochs, 
 reporting the accuracy and loss after each. Then the pretrained model will be saved in 
-"../cs588-capstone/segmentation/models".
+"../cs588-capstone/Segmentation/Models/Classification".
 
-FOR THE UI: 
+Run resnet_localization_training.py to start training the model on localization. Where the model
+predicts the mask outcome of the MRI. Then the pretrained model will be saved in 
+"../cs588-capstone/Segmentation/Models/Localization".
+
+# For The UI
 
 Start the Flask backend (python app.py).
 Start the React frontend (npm start).
